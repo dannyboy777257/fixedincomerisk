@@ -66,3 +66,28 @@ bonds <- tidyquant::tq_get("DGS1",
 #                                output = "price"))
 
 # put our initial data pulls and manipulation in here
+
+symbols <- c("DGS1MO", "DGS3MO", "DGS6MO", "DGS1", "DGS2", "DGS3", "DGS5", "DGS7", "DGS10", "DGS20", "DGS30")
+
+yields <- tidyquant::tq_get(symbols, get = "economic.data", from = "1992-01-01", to = Sys.Date()) %>%
+  tidyr::drop_na() %>% 
+  dplyr::mutate(maturity_in_years = dplyr::case_when(
+    symbol == "DGS1MO" ~ round(1/12, 3),
+    symbol == "DGS3MO" ~ round(3/12, 3),
+    symbol == "DGS6MO" ~ 6/12,
+    symbol == "DGS1"   ~ 1,
+    symbol == "DGS2"   ~ 2,
+    symbol == "DGS3"   ~ 3,
+    symbol == "DGS5"   ~ 5,
+    symbol == "DGS7"   ~ 7,
+    symbol == "DGS10"  ~ 10,
+    symbol == "DGS20"  ~ 20,
+    symbol == "DGS30"  ~ 30
+  )) %>%
+  dplyr::rename(rate = price) %>%
+  
+  dplyr::mutate(rate = rate / 100,
+                changeBasisPoints = round(((rate - lag(rate, 1)) * 10000), digits = 5),
+                par = 100)
+
+

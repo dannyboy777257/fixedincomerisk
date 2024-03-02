@@ -18,10 +18,8 @@ library(lubridate)
 ```{r Data Table}
 symbols <- c("DGS1MO", "DGS3MO", "DGS6MO", "DGS1", "DGS2", "DGS3", "DGS5", "DGS7", "DGS10", "DGS20", "DGS30")
 
-tidyquant::tq_get(symbols, get = "economic.data", from = "1992-01-01", to = Sys.Date()) %>%
-  
+df <- tidyquant::tq_get(symbols, get = "economic.data", from = "1992-01-01", to = Sys.Date()) %>%
   tidyr::drop_na() %>% 
-  
   dplyr::mutate(maturity_in_years = dplyr::case_when(
     symbol == "DGS1MO" ~ round(1/12, 3),
     symbol == "DGS3MO" ~ round(3/12, 3),
@@ -36,137 +34,19 @@ tidyquant::tq_get(symbols, get = "economic.data", from = "1992-01-01", to = Sys.
     symbol == "DGS30"  ~ 30
   )) %>%
   dplyr::rename(rate = price) %>%
-  
   dplyr::mutate(rate = rate / 100,
                 changeBasisPoints = round(((rate - lag(rate, 1)) * 10000), digits = 5),
                 par = 100) %>% 
-  
 dplyr::group_by(symbol) %>% 
-  
   dplyr::arrange(desc(date),.by_group = TRUE) %>%  
   dplyr::mutate(stdev = slider::slide_dbl(
                     .x = changeBasisPoints,
                     .f = sd, 
                     .before = 1, 
                     .after = 0, 
-                    .complete = FALSE))  %>% 
-  
-  dplyr::arrange(desc(date))
+                    .complete = FALSE)) %>% 
+  dplyr::filter(maturity_in_years ==2) %>% 
+  dplyr::arrange((date))
 df
 
 ```
-
-
-
-
-```{r}
-
-
-# C = 0 # coupon rate for the zeroes
-ytm = 0.05
-
-T2M = 1
-
-
-step_size = 0.0001 # 1 basis point, but hardcoding below to see when we use it. 
-
-
-RTL::bond(
-  ytm = ytm,
-  C = C,
-  T2M = 1,
-  m = 1,
-  output = "df" # can also change to duration or df per documentation, where df shows the cash flows per 6 months
-  )
-
-
-bonds <- tidyquant::tq_get("DGS1", 
-                  get = "economic.data",
-                  from = "1992-01-01",
-                  to = Sys.Date()) %>%
-  tidyr::drop_na() %>% 
-  dplyr::mutate(maturity_in_years = dplyr::case_when(symbol == "DGS1"   ~ 1)) %>%
-  dplyr::rename(rate = price) %>%
-  dplyr::mutate(rate = rate / 100,
-                changeBasisPoints = round(((rate - lag(rate, 1)) * 10000), digits = 5),
-                par = 100) %>% 
-dplyr::group_by(symbol) %>% 
-dplyr::arrange(desc(date)) %>% 
-dplyr::mutate(yield_plus = rate + 0.0001,
-              
-            
-              yield_minus = rate - 0.0001,
-              
-
-              
-              price_plus = mapply(RTL::bond,
-                                  ytm = yield_plus,
-                                  C = 0,
-                                  T2M = maturity_in_years,
-                                  m = 1,
-                                  output = "price"),
-              
-
-              price_minus = mapply(RTL::bond,
-                                  ytm = yield_minus,
-                                  C = 0,
-                                  T2M = maturity_in_years,
-                                  m = 1,
-                                  output = "price"),
-              
-              
-              price = mapply(RTL::bond,
-                             ytm = rate,
-                              C = 0,
-                              T2M = maturity_in_years,
-                              m = 1,
-                              output = "price"))
-
-
-
-
-# make the grid of yields spanning from 2.5% to 7.5% 
-# below is single column of yields from 2.5% to 7.5%
-dplyr::tibble(yield = round(seq(0.025, 0.075, step_size),4)) # seq(start, stop, step)
-# use this in RTL::bond
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
