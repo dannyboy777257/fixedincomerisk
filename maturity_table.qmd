@@ -6,19 +6,22 @@ editor: visual
 
 ```{r libraries}
 library(tidyverse)
-library(ggplot2)
 library(tidyquant)
-library(tidyr)
 library(RTL)
 library(shiny)
 library(lubridate)
-
+library(Rcpp)
 ```
 
-```{r Data Table}
+
+```{r with cpp}
+
 symbols <- c("DGS1MO", "DGS3MO", "DGS6MO", "DGS1", "DGS2", "DGS3", "DGS5", "DGS7", "DGS10", "DGS20", "DGS30")
 
-df <- tidyquant::tq_get(symbols, get = "economic.data", from = "1992-01-01", to = Sys.Date()) %>%
+bonds_with_cpp <- tidyquant::tq_get(symbols,
+                                    get = "economic.data",
+                                    from = "1992-01-01",
+                                    to = Sys.Date()) %>%
   tidyr::drop_na() %>% 
   dplyr::mutate(maturity_in_years = dplyr::case_when(
     symbol == "DGS1MO" ~ round(1/12, 3),
@@ -32,21 +35,206 @@ df <- tidyquant::tq_get(symbols, get = "economic.data", from = "1992-01-01", to 
     symbol == "DGS10"  ~ 10,
     symbol == "DGS20"  ~ 20,
     symbol == "DGS30"  ~ 30
-  )) %>%
-  dplyr::rename(rate = price) %>%
-  dplyr::mutate(rate = rate / 100,
-                changeBasisPoints = round(((rate - lag(rate, 1)) * 10000), digits = 5),
+  )) 
+
+
+
+
+bonds_with_cpp <- bonds_with_cpp %>%
+  dplyr::rename(yield = price) %>%
+  dplyr::mutate(yield = yield / 100,
+                changeBasisPoints = round(((yield - lag(yield, 1)) * 10000), digits = 5),
                 par = 100) %>% 
-dplyr::group_by(symbol) %>% 
-  dplyr::arrange(desc(date),.by_group = TRUE) %>%  
-  dplyr::mutate(stdev = slider::slide_dbl(
-                    .x = changeBasisPoints,
-                    .f = sd, 
-                    .before = 1, 
-                    .after = 0, 
-                    .complete = FALSE)) %>% 
-  dplyr::filter(maturity_in_years ==2) %>% 
-  dplyr::arrange((date))
-df
+dplyr::arrange(desc(date)) %>% 
+dplyr::mutate(yield_plus = yield + 0.0001,
+              
+            
+              yield_minus = yield - 0.0001,
+              
+
+              
+              price_plus = mapply(bondPrice,
+                                  ytm = yield_plus,
+                                  faceValue = par,
+                                  coupon = 0,
+                                  ttm = maturity_in_years,
+                                  freq = 2),
+              
+
+              price_minus = mapply(bondPrice,
+                                  ytm = yield_minus,
+                                  faceValue = par,
+                                  coupon = 0,
+                                  ttm = maturity_in_years,
+                                  freq = 2),
+              
+              
+              price = mapply(bondPrice,
+                              ytm = yield,
+                              faceValue = par,
+                              coupon = 0,
+                              ttm = maturity_in_years,
+                              freq = 2),
+              
+              duration = (price_plus - price_minus)/ (2*0.01*price), # define duration as percent change in bond's value for change of 1 percentage point  
+              
+              gamma = (price_plus - 2*price + price_minus)/(price*2*0.01), 
+              
+              dollar_duration= (duration * price), # dollar value change for 1 percentage point 
+              
+              delta_pl = dollar_duration * 0.01, # dollar value change for 1 basis point 
+              
+              dollar_gamma = (gamma * price), # dollar value change from gamma for 1 percentage point 
+              
+              gamma_pl = dollar_gamma*0.01, # price change for 1 basis point which is attributed to gamma
+              
+              unexplained_pl = price - (price + delta_pl + gamma_pl)) 
+
+
+todays_date <- Sys.Date() %>% as.character()
+
+bonds_with_cpp %>% dplyr::slice(1:77) %>% 
+  dplyr::select(maturity_in_years, yield, date) %>% 
+  dplyr::arrange(maturity_in_years) %>% 
+  ggplot2::ggplot(mapping  = aes(x = maturity_in_years, 
+                                 y = yield, 
+                                 col = date)) + 
+  geom_point() +
+  labs(title = paste0("Yield curve as of ",todays_date))
+
+                  
+
 
 ```
+
+
+
+```{r phil}
+
+
+bonds_with_cpp_phil <- tidyquant::tq_get("DGS1", 
+                  get = "economic.data",
+                  from = "1992-01-01",
+                  to = Sys.Date()) %>%
+  tidyr::drop_na() %>% 
+  dplyr::mutate(maturity_in_years = dplyr::case_when(symbol == "DGS1"   ~ 1)) %>%
+  dplyr::rename(yield = price) %>%
+  dplyr::mutate(yield = yield / 100,
+                changeBasisPoints = round(((yield - lag(yield, 1)) * 10000), digits = 5),
+                par = 100) %>% 
+dplyr::group_by(symbol) %>% 
+dplyr::arrange(desc(date)) %>% 
+dplyr::mutate(yield_plus = yield + 0.0001,
+              
+            
+              yield_minus = yield - 0.0001,
+              
+
+              
+              price_plus = mapply(bondPrice,
+                                  ytm = yield_plus,
+                                  faceValue = par,
+                                  coupon = 0,
+                                  ttm = maturity_in_years,
+                                  freq = 2),
+              
+
+              price_minus = mapply(bondPrice,
+                                  ytm = yield_minus,
+                                  faceValue = par,
+                                  coupon = 0,
+                                  ttm = maturity_in_years,
+                                  freq = 2),
+              
+              
+              price = mapply(bondPrice,
+                              ytm = yield,
+                              faceValue = par,
+                              coupon = 0,
+                              ttm = maturity_in_years,
+                              freq = 2),
+              
+              delta = (price_plus-price_minus) / (2*0.0001)/10000, 
+              
+              gamma = 0.5*((price_plus - 2*price + price_minus)/ 0.0001^2)/10000^2)
+```
+
+
+
+```{r}
+
+ttm = 10
+yield_of_bond_in_question = 0.05 # this will be the chosen bond
+coupon_rate = 0.05
+
+
+# make the grid of yields spanning from 2.5% to 7.5% 
+# below is single column of yields from 2.5% to 7.5%
+dynamic <- dplyr::tibble(yield = round(seq(0.025, 0.075, step_size),4)) %>%  # seq(start, stop, step), # use this in RTL::bond or bondPrice cpp
+dplyr::mutate(par = 100) %>%
+dplyr::mutate(yield_plus = yield + 0.0001, 
+              yield_minus = yield - 0.0001) %>% 
+dplyr::mutate(price = mapply(bondPrice, 
+                             ytm = yield, 
+                             faceValue = par,
+                             coupon = coupon_rate, 
+                             ttm = ttm, 
+                             freq = 2), 
+              
+              price_plus = mapply(bondPrice,
+                                  ytm = yield_plus,
+                                  faceValue = par,
+                                  coupon = coupon_rate,
+                                  ttm = ttm,
+                                  freq = 2),
+              
+              price_minus = mapply(bondPrice,
+                                  ytm = yield_minus,
+                                  faceValue = par,
+                                  coupon = coupon_rate,
+                                  ttm = ttm,
+                                  freq = 2),
+              
+              delta = (price_plus-price_minus) / (2*0.0001)/10000, 
+              
+              gamma = 0.5*((price_plus - 2*price + price_minus)/ 0.0001^2)/10000^2)
+              
+
+# delta at current yield
+current_delta <- dynamic %>% dplyr::filter(yield == yield_of_bond_in_question) %>% dplyr::select(delta) %>% as.numeric()
+
+
+
+# price at current yield
+current_price <- dynamic %>% dplyr::filter(yield == yield_of_bond_in_question) %>% dplyr::select(price) %>% as.numeric()
+
+
+
+
+# add slope at current yield aka delta
+dynamic <- dynamic %>% 
+  dplyr::mutate(delta_current_price = current_price + current_delta * (yield - yield_of_bond_in_question) * 10000)
+
+
+
+
+dynamic %>% dplyr::select(yield, 
+                          price, 
+                          delta_current_price) %>% 
+  tidyr::pivot_longer(-yield, 
+                      names_to = "seriesname",
+                      values_to = "values") %>% 
+  ggplot2::ggplot(mapping = aes(x = yield, 
+                                y = values, 
+                                col = seriesname)
+) + geom_line()
+
+
+
+
+
+```
+
+
+
+
