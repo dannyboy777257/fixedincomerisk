@@ -15,13 +15,13 @@ shiny::fluidPage(
       shiny::tabPanel("Portfolio Analysis", 
                       
                       # shiny::br(),
-                      # plotly::plotlyOutput("somecharts", height = ch), 
+                      # plotly::plotlyOutput("chart1", height = ch), 
                       # shiny::br(), 
                       # shiny::br(), 
-                      # plotly::plotlyOutput("2", height = ch), 
+                      # plotly::plotlyOutput("chart2", height = ch), 
                       # shiny::br(), 
                       # shiny::br(), 
-                      # plotly::plotlyOutput("3", height = ch) 
+                      # plotly::plotlyOutput("chart3", height = ch) 
       ),
       shiny::tabPanel("Portfolio with Limits"),
       shiny::tabPanel("Something cool"),

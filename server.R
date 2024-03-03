@@ -41,4 +41,29 @@ function(input, output, session) {
                        yaxis = list(title = "Rate (%)"))
     })
   })
+  
+  # output$chart1 <- plotly::renderPlotly({
+  #   shiny::req()
+  #   data %>% 
+  #     plotly::plot_ly(x = ~var1, y = ~var2, type = "bar", color = ~var) %>% 
+  #     plotly::layout(xaxis = list(title = "title"), yaxis = list(title = "title2"), 
+  #                    title = "title")
+  # })
+  # 
+  # output$chart2 <- plotly::renderPlotly({
+  #   shiny::req()
+  #   data %>% 
+  #     plotly::plot_ly(x = ~var1, y = ~var2, type = "scatter", color = ~var) %>% 
+  #     plotly::layout(xaxis = list(title = "title"), yaxis = list(title = "title2"), 
+  #                    title = "title")
+  # })
+  # 
+  # output$chart3 <- plotly::renderPlotly({
+  #   shiny::req()
+  #   data %>% 
+  #     plotly::plot_ly(x = ~var1, y = ~var2, type = "scatter", color = ~var) %>% 
+  #     plotly::layout(xaxis = list(title = "title"), yaxis = list(title = "title2"), 
+  #                    title = "title")
+  # })
+  
 }
