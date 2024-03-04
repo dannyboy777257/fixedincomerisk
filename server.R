@@ -10,10 +10,10 @@ function(input, output, session) {
   
   # editable table render 
   output$recentBondTable <- renderDT({
-    datatable(recentBondReac$data, editable = TRUE)
+    datatable(recentBondReac$data, editable = TRUE, options = list(pageLength = 11, searching = FALSE, lengthChange = FALSE, paging = FALSE), 
+              class = 'cell-border stripe')
   }, server = TRUE)
-  
-  # Observe cell edits and update the data accordingly
+
   observeEvent(input$recentBondTable_cell_edit, {
     # user edits
     editInfo <- input$recentBondTable_cell_edit
@@ -21,11 +21,11 @@ function(input, output, session) {
     recentBondReac$data <- DT::editData(recentBondReac$data, editInfo) %>% 
       dplyr::rowwise() %>% 
       dplyr::mutate(
-        price = bondPrice(ytm = rate, faceValue = par, coupon = couponRate, ttm = maturity_in_years, freq = frequency),
-        pricePlus = bondPrice(ytm = yield_plus, faceValue = par, coupon = couponRate, ttm = maturity_in_years, freq = frequency),
-        priceMinus = bondPrice(ytm = yield_minus, faceValue = par, coupon = couponRate, ttm = maturity_in_years, freq = frequency)
+        Value = round(bondPrice(ytm = YTM, faceValue = PortfolioAllocation, coupon = CouponRate, ttm = Maturity, freq = Frequency), 2)
       )
   })
+  
+
   
   shiny::observeEvent(input$generateButton, {
     filteredYieldData <- yields %>%
