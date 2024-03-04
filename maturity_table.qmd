@@ -13,7 +13,6 @@ library(lubridate)
 library(Rcpp)
 ```
 
-
 ```{r with cpp}
 
 symbols <- c("DGS1MO", "DGS3MO", "DGS6MO", "DGS1", "DGS2", "DGS3", "DGS5", "DGS7", "DGS10", "DGS20", "DGS30")
@@ -24,8 +23,8 @@ bonds_with_cpp <- tidyquant::tq_get(symbols,
                                     to = Sys.Date()) %>%
   tidyr::drop_na() %>% 
   dplyr::mutate(maturity_in_years = dplyr::case_when(
-    symbol == "DGS1MO" ~ round(1/12, 3),
-    symbol == "DGS3MO" ~ round(3/12, 3),
+    symbol == "DGS1MO" ~ round(1/12, 7),
+    symbol == "DGS3MO" ~ round(3/12, 7),
     symbol == "DGS6MO" ~ 6/12,
     symbol == "DGS1"   ~ 1,
     symbol == "DGS2"   ~ 2,
@@ -74,7 +73,9 @@ dplyr::mutate(yield_plus = yield + 0.0001,
                               faceValue = par,
                               coupon = 0,
                               ttm = maturity_in_years,
-                              freq = 2),
+                              freq = dplyr::case_when(symbol == "DGS1MO" ~ 12, 
+                                                      symbol == "DGS3MO" ~ 4, 
+                                                      TRUE ~ 2)),
               
               duration = (price_plus - price_minus)/ (2*0.01*price), # define duration as percent change in bond's value for change of 1 percentage point  
               
@@ -106,8 +107,6 @@ bonds_with_cpp %>% dplyr::slice(1:77) %>%
 
 
 ```
-
-
 
 ```{r phil}
 
@@ -159,14 +158,12 @@ dplyr::mutate(yield_plus = yield + 0.0001,
               gamma = 0.5*((price_plus - 2*price + price_minus)/ 0.0001^2)/10000^2)
 ```
 
-
-
 ```{r}
 
 ttm = 10
 yield_of_bond_in_question = 0.05 # this will be the chosen bond
 coupon_rate = 0.05
-
+step_size = 0.001
 
 # make the grid of yields spanning from 2.5% to 7.5% 
 # below is single column of yields from 2.5% to 7.5%
@@ -232,9 +229,4 @@ dynamic %>% dplyr::select(yield,
 
 
 
-
 ```
-
-
-
-
