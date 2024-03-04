@@ -23,8 +23,22 @@ shiny::fluidPage(
                       # shiny::br(), 
                       # plotly::plotlyOutput("chart3", height = ch) 
       ),
+      
+      
+      
+      
       shiny::tabPanel("Portfolio with Limits"),
+      
+      
+      
+      
+      
       shiny::tabPanel("Something cool"),
+      
+      
+      
+      
+      
       shiny::tabPanel("Yield Curves",
                       sidebarLayout(
                         shiny::sidebarPanel(

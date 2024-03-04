@@ -77,19 +77,45 @@ dplyr::mutate(yield_plus = yield + 0.0001,
                                                       symbol == "DGS3MO" ~ 4, 
                                                       TRUE ~ 2)),
               
-              duration = (price_plus - price_minus)/ (2*0.01*price), # define duration as percent change in bond's value for change of 1 percentage point  
+              duration_w_formula = maturity_in_years/(1+(yield/2)), # should be slightly less than maturity in years, using this to check
               
-              gamma = (price_plus - 2*price + price_minus)/(price*2*0.01), 
+              duration = (price_plus - price_minus)/ ((2*0.0001)*price), # 1 basis point change in rate brings "duration" basis point change in bond value  
               
-              dollar_duration= (duration * price), # dollar value change for 1 percentage point 
+              gamma = (price_plus - 2*price + price_minus)/(price*2*0.0001), 
               
-              delta_pl = dollar_duration * 0.01, # dollar value change for 1 basis point 
+              delta = 0.0001*price*duration, #the 0.0001 can be changed to see price change from that change in rate.
               
-              dollar_gamma = (gamma * price), # dollar value change from gamma for 1 percentage point 
+              dollar_gamma = (gamma * price * 0.0001), 
               
-              gamma_pl = dollar_gamma*0.01, # price change for 1 basis point which is attributed to gamma
+              # start pl
               
-              unexplained_pl = price - (price + delta_pl + gamma_pl)) 
+              delta_pl = delta, 
+              
+              gamma_pl = gamma, 
+              
+              unexplained_pl = price - (price+delta_pl+gamma_pl))
+
+
+
+
+
+bonds_with_cpp %>% 
+  plotly::plot_ly(x = ~ date, 
+                  y = ~delta, 
+                  name = ~symbol, 
+                  color = ~symbol) %>% 
+  plotly::add_lines() %>% 
+  plotly::layout(title = list(text = "Bond Price Change per 1 Basis point increase in yield: 1995 - Present", x = 0), 
+                 xaxis = list(title = "Date"), 
+                 yaxis = list(title = "$ value of 1 basis point:")
+  )
+  
+
+
+
+
+
+
 
 
 todays_date <- Sys.Date() %>% as.character()

@@ -1,4 +1,4 @@
-library(dplyr)
+library(tidyverse)
 library(tidyquant)
 library(Rcpp)
 
@@ -36,15 +36,43 @@ yields <- tidyquant::tq_get(symbols, get = "economic.data", from = "1992-01-01",
                 yield_minus = rate - 0.0001) %>% 
   dplyr::rowwise() %>% 
   dplyr::mutate(
-    price = bondPrice(ytm = rate, faceValue = par, coupon = couponRate, ttm = maturity_in_years, freq = frequency),
-    pricePlus = bondPrice(ytm = yield_plus, faceValue = par, coupon = couponRate, ttm = maturity_in_years, freq = frequency),
-    priceMinus = bondPrice(ytm = yield_minus, faceValue = par, coupon = couponRate, ttm = maturity_in_years, freq = frequency)
+    price = bondPrice(ytm = rate,
+                      faceValue = par,
+                      coupon = couponRate,
+                      ttm = maturity_in_years,
+                      freq = frequency),
+    pricePlus = bondPrice(ytm = yield_plus,
+                          faceValue = par,
+                          coupon = couponRate,
+                          ttm = maturity_in_years,
+                          freq = frequency),
+    priceMinus = bondPrice(ytm = yield_minus,
+                           faceValue = par,
+                           coupon = couponRate,
+                           ttm = maturity_in_years,
+                           freq = frequency)
   ) %>% 
   dplyr::ungroup()
 
+recentBond_everything <- yields %>%
+  filter(date == max(date))
+
+
+
 recentBond <- yields %>%
   filter(date == max(date)) %>% 
-  transmute(YTM = rate, Maturity = maturity_in_years, CouponRate = couponRate, PortfolioAllocation = par, Frequency = frequency, Value = round(price, 2))
+  transmute(YTM = rate,
+            Maturity = maturity_in_years,
+            CouponRate = couponRate,
+            PortfolioAllocation = par,
+            Frequency = frequency,
+            Value = round(price, 2))
+
+
+
+
+
+
 
 # bonds$price <- base::apply(bonds, 1, function(row) {
 #   

@@ -8,9 +8,14 @@ function(input, output, session) {
   
   recentBondReac <- reactiveValues(data = recentBond)
   
-  # editable table render 
+  # editable table render, outputting the maturity table by default. 
   output$recentBondTable <- renderDT({
-    datatable(recentBondReac$data, editable = TRUE, options = list(pageLength = 11, searching = FALSE, lengthChange = FALSE, paging = FALSE), 
+    datatable(recentBondReac$data,
+              editable = TRUE,
+              options = list(pageLength = 11,
+                             searching = FALSE,
+                             lengthChange = FALSE,
+                             paging = FALSE), 
               class = 'cell-border stripe')
   }, server = TRUE)
 
@@ -20,12 +25,37 @@ function(input, output, session) {
     # adding user edits back to df and applying price func.
     recentBondReac$data <- DT::editData(recentBondReac$data, editInfo) %>% 
       dplyr::rowwise() %>% 
-      dplyr::mutate(
-        Value = round(bondPrice(ytm = YTM, faceValue = PortfolioAllocation, coupon = CouponRate, ttm = Maturity, freq = Frequency), 2)
-      )
+      dplyr::mutate(price = round(bondPrice(ytm = YTM, # changed "Value" to price here , can change it back after.
+                                faceValue = PortfolioAllocation,
+                                coupon = CouponRate,
+                                ttm = Maturity,
+                                freq = Frequency), 2))
+                   # yield_plus = , 
+                    # yield_minus = , 
+                    # price_plus = , 
+                    # price_minus = , 
+                    
+                    
+      
   })
   
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   shiny::observeEvent(input$generateButton, {
     filteredYieldData <- yields %>%
