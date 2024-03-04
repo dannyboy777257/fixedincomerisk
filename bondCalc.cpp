@@ -12,18 +12,19 @@ using namespace Rcpp;
 //
 
 // [[Rcpp::export]]
-double bondPrice(double ytm, int faceValue, double coupon, int ttm, int freq) {
+double bondPrice(double ytm, int faceValue, double coupon, double ttm, int freq) {
   
   double couponPayment = (coupon * faceValue) / freq;
   double bondPrice = 0.0;
+  int totalPeriods = ceil(ttm * freq);
   
-  for (int t = 1; t <= ttm * freq; t++) {
+  for (int t = 1; t <= totalPeriods; t++) {
     
     bondPrice += couponPayment / pow(1 + ytm / freq, t);
     
   }
   
-  bondPrice += faceValue / pow(1 +  ytm / freq, ttm * freq);
+  bondPrice += faceValue / pow(1 +  ytm / freq, totalPeriods);
   
   return bondPrice;
   
