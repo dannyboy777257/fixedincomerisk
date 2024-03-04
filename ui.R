@@ -46,7 +46,9 @@ shiny::fluidPage(
                                            value = Sys.Date(), min = "1992-01-01", max = Sys.Date()),
                           shiny::checkboxGroupInput("yieldSelection", "Select Yields to Plot", 
                                                     choices = c("DGS1MO", "DGS3MO", "DGS6MO", "DGS1", "DGS2", 
-                                                                "DGS3", "DGS5", "DGS7", "DGS10", "DGS20", "DGS30")),
+                                                                "DGS3", "DGS5", "DGS7", "DGS10", "DGS20", "DGS30"),
+                                                    selected = c("DGS1MO", "DGS3MO", "DGS6MO", "DGS1", "DGS2", 
+                                                                 "DGS3", "DGS5", "DGS7", "DGS10", "DGS20", "DGS30")),
                           shiny::actionButton("generateButton", "Generate Plot")
                         ),
                         shiny::mainPanel(

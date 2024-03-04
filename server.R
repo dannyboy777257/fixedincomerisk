@@ -3,6 +3,7 @@ library(plotly)
 library(shiny)
 library(ggplot2)
 library(DT)
+library()
 
 function(input, output, session) {
   
@@ -58,15 +59,27 @@ function(input, output, session) {
   
   
   shiny::observeEvent(input$generateButton, {
-    filteredYieldData <- yields %>%
-      dplyr::filter(symbol %in% input$yieldSelection & date == input$dateInput)
+    selectedDate <- input$dateInput
+    if(selectedDate %in% yields$date) {
+      filteredYieldData <- yields %>%
+        dplyr::filter(symbol %in% input$yieldSelection & date == selectedDate)
+    } else {
+      previousDates <- yields %>% 
+        dplyr::filter(date < selectedDate)
+      
+      selectedDate <- previousDates$date[1]
+      
+      filteredYieldData <- previousDates %>%
+        dplyr::filter(symbol %in% input$yieldSelection & date == selectedDate)
+      
+    }
     
     # Generate Plotly plot
     output$yieldCurvePlot <- renderPlotly({
       plotly::plot_ly(data = filteredYieldData, x = ~maturity_in_years, y = ~rate, type = 'scatter', mode = 'lines+markers',
                       marker = list(size = 10), 
                       line = list(shape = "spline")) %>%
-        plotly::layout(title = paste("Yield Curve on", input$dateInput),
+        plotly::layout(title = paste("Yield Curve on", selectedDate),
                        xaxis = list(title = "Maturity (Years)"),
                        yaxis = list(title = "Rate (%)"))
     })
