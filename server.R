@@ -98,59 +98,55 @@ function(input, output, session) {
   
   
   
+  observe({
+    date_range <- input$dateSlider
+    updateDateRangeInput(session, "dateRangeInput", start = as.Date(date_range[1]), end = as.Date(date_range[2]))
+  })
+  
+  observe({
+    date_range <- input$dateRangeInput
+    updateSliderTextInput(session, "dateSlider", selected = c(as.character(date_range[1]), as.character(date_range[2])))
+  })
+  
+  # Preparing data for the animated plot upon button click
   plotData <- eventReactive(input$generateButton, {
-    # Start and end dates from the slider input
     startDate <- as.Date(input$dateSlider[1])
     endDate <- as.Date(input$dateSlider[2])
     symbolsSelected <- input$yieldSelection
     
-    # Filter the data for the selected date range and symbols
-    filteredYields <- yields %>%
-      filter(date >= startDate & date <= endDate,
-             symbol %in% symbolsSelected) %>%
+    yields %>%
+      filter(date >= startDate & date <= endDate, symbol %in% symbolsSelected) %>%
       arrange(date, maturity_in_years)
-    
-    # Find all the unique dates within the filtered data
-    uniqueDates <- unique(filteredYields$date)
-    
-    list(filteredYields = filteredYields, uniqueDates = uniqueDates)
   })
   
   output$yieldCurvePlot <- renderPlotly({
-    # Get the data from the eventReactive expression
-    data <- plotData()
-    filteredYields <- data$filteredYields
-    uniqueDates <- data$uniqueDates
+    df <- plotData()
     
-    # Initialize an empty plotly object
-    p <- plot_ly()
-    
-    # Loop through each date to plot the yield curve for that day
-    for(i in seq_along(uniqueDates)) {
-      currentDate <- uniqueDates[i]
-      # Filter the data for the current date
-      dailyYields <- filteredYields %>%
-        filter(date == currentDate) %>%
-        arrange(maturity_in_years) # Ensure yields are ordered by maturity
-      
-      if(nrow(dailyYields) > 0) {
-        formattedDate <- format(as.Date(currentDate), "%Y-%m-%d") # Format the date for the legend
-        p <- add_trace(p,
-                       x = dailyYields$maturity_in_years,
-                       y = dailyYields$rate,
-                       name = formattedDate, # Use the formatted date for the legend
-                       type = 'scatter',
-                       mode = 'lines+markers',
-                       line = list(shape = 'spline'))
-      }
-    }
-    
-    # Customize the layout of the plot
-    p <- layout(p,
-                title = 'Yield Curves',
-                xaxis = list(title = 'Maturity (Years)'),
-                yaxis = list(title = 'Rate (%)'),
-                showlegend = TRUE)
+    p <- df %>%
+      plot_ly(x = ~maturity_in_years, y = ~rate,
+              frame = ~as.character(date), ids = ~paste(symbol, date),
+              type = 'scatter', mode = 'lines+markers',
+              line = list(shape = 'spline')) %>%
+      layout(title = 'Animated Yield Curves', 
+             xaxis = list(title = 'Maturity (Years)'), 
+             yaxis = list(title = 'Rate (%)')) %>%
+      animation_opts(frame = 25, redraw = TRUE) %>%
+      animation_slider(currentvalue = list(prefix = "Date: ")) %>%
+      layout(updatemenus = list(
+        list(
+          type = "buttons",
+          showactive = FALSE,
+          y = 0.8,
+          x = 1.05,
+          xanchor = "right",
+          yanchor = "top",
+          pad = list(t = 0, r = 10),
+          buttons = list(
+            list(method = "animate", args = list("play", list(frame = "next", duration = 500)), label = "Play"),
+            list(method = "animate", args = list("pause"), label = "Pause")
+          )
+        )
+      ))
     
     return(p)
   })

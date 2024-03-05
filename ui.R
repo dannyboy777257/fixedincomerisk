@@ -57,10 +57,13 @@ shiny::fluidPage(
       shiny::tabPanel("Yield Curves",
                       sidebarLayout(
                         shiny::sidebarPanel(
+                          shiny::dateRangeInput("dateRangeInput", "Choose Date Range:",
+                                                start = Sys.Date() - 30, end = Sys.Date(),
+                                                min = "1992-01-01", max = Sys.Date()),
                           sliderTextInput("dateSlider",
-                                          "Choose Date Range:",
+                                          "Date Range Slider:",
                                           choices = seq(as.Date("1992-01-01"), Sys.Date(), by = "day"),
-                                          selected = c(as.Date("1992-01-01"), Sys.Date()),
+                                          selected = c(as.Date(Sys.Date() - 30), Sys.Date()),
                                           grid = TRUE,
                                           animate = TRUE),
                           shiny::checkboxGroupInput("yieldSelection", "Select Yields to Plot", 
@@ -70,9 +73,8 @@ shiny::fluidPage(
                                                                  "DGS3", "DGS5", "DGS7", "DGS10", "DGS20", "DGS30")),
                           shiny::actionButton("generateButton", "Generate Plot")
                         ),
-                        shiny::mainPanel(
-                          plotly::plotlyOutput("yieldCurvePlot")
-                        )))
+                        shiny::mainPanel(plotly::plotlyOutput("yieldCurvePlot"))
+                      ))
     )
   )
 )
