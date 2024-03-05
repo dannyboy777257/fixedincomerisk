@@ -47,11 +47,28 @@ function(input, output, session) {
   filteredTS <- reactive({
     data <- yieldTSReac1$data
     selectedSymbols <- c(input$asset1, input$asset2, input$asset3, input$asset4)
+    allocationValues <- c(input$allocation1, input$allocation2, input$allocation3, input$allocation4)
+    allocations <- setNames(allocationValues, selectedSymbols)
     
     if(length(selectedSymbols) > 0) {
       data <- data %>% 
-        filter(symbol %in% selectedSymbols)
+        filter(symbol %in% selectedSymbols) %>%
+      mutate(par = case_when(
+        symbol == names(allocations)[1] ~ as.numeric(allocations[1]),
+        symbol == names(allocations)[2] ~ as.numeric(allocations[2]),
+        symbol == names(allocations)[3] ~ as.numeric(allocations[3]),
+        symbol == names(allocations)[4] ~ as.numeric(allocations[4]),
+        TRUE ~ par
+      ))
     }
+    
+    data <- data %>%
+      dplyr::rowwise() %>% 
+      dplyr::mutate(price = round(bondPrice(ytm = rate,
+                                            faceValue = par,
+                                            coupon = couponRate,
+                                            ttm = maturity_in_years,
+                                            freq = frequency), 2))
     
     return(data)
   })
@@ -63,6 +80,17 @@ function(input, output, session) {
     }
     plot <- plotDf %>% 
       plot_ly(x = ~date, y = ~rate, color = ~symbol, type = 'scatter', mode = 'lines+markers')
+    
+    return(plot)
+  })
+  
+  output$allocation <- renderPlotly({
+    plotDf <- filteredTS()
+    if(nrow(plotDf) == 0) {
+      return(NULL) 
+    }
+    plot <- plotDf %>% 
+      plot_ly(x = ~date, y = ~par, color = ~symbol, type = 'scatter', mode = 'lines+markers')
     
     return(plot)
   })

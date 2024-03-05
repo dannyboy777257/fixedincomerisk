@@ -7,6 +7,7 @@ Rcpp::sourceCpp('bondCalc.cpp')
 
 symbols <- c("DGS1MO", "DGS3MO", "DGS6MO", "DGS1", "DGS2", "DGS3", "DGS5", "DGS7", "DGS10", "DGS20", "DGS30")
 
+
 yields <- tidyquant::tq_get(symbols, get = "economic.data", from = "1992-01-01", to = Sys.Date()) %>%
   tidyr::drop_na() %>% 
   dplyr::mutate(maturity_in_years = dplyr::case_when(
