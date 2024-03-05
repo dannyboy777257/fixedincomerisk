@@ -79,7 +79,7 @@ dplyr::mutate(yield_plus = yield + 0.0001,
               
               duration_w_formula = maturity_in_years/(1+(yield/2)), # should be slightly less than maturity in years, using this to check
               
-              duration = (price_plus - price_minus)/ ((2*0.0001)*price), # 1 basis point change in rate brings "duration" basis point change in bond value  
+              duration = (price_plus - price_minus)/ ((2*0.0001)*price), # x% basis point change in rate brings x% "duration" change in bond value  
               
               gamma = (price_plus - 2*price + price_minus)/(price*2*0.0001), 
               
@@ -112,9 +112,48 @@ bonds_with_cpp %>%
   
 
 
+# dollar value of a basis point over time 
+bonds_with_cpp %>%  
+  plotly::plot_ly(x = ~ date, 
+                  y = ~delta, 
+                  name = ~symbol, 
+                  color = ~symbol) %>% 
+  plotly::add_lines() %>% 
+  plotly::layout(title = list(text = "Bond Price Change per 1 Basis point increase in yield: 1995 - Present", x = 0), 
+                 xaxis = list(title = "Date"), 
+                 yaxis = list(title = "$ value of 1 basis point:")
+  )
 
 
 
+
+
+
+# annualized rolling 30 day standard deviation of delta
+
+
+sd_date_start <-  "2019-01-01"
+
+bonds_with_cpp %>%
+  dplyr::filter(date > sd_date_start) %>% 
+  dplyr::group_by(symbol) %>% 
+  dplyr::mutate(sd_of_delta = slider::slide_dbl(
+   .x = delta, 
+   .f = sd, 
+   .before = 30, 
+   .after = 0, 
+   .complete = FALSE
+  ) * sqrt(12)) %>% 
+  plotly::plot_ly(x = ~ date, 
+                  y = ~sd_of_delta, 
+                  name = ~symbol, 
+                  color = ~symbol) %>% 
+  plotly::add_lines() %>% 
+  plotly::layout(title = list(text = "30 day rolling standard deviation of delta (Annualized)", x = 0), 
+                 xaxis = list(title = "Date"), 
+                 yaxis = list(title = "sd %")
+  ) %>% 
+  dplyr::ungroup()
 
 
 
@@ -256,3 +295,177 @@ dynamic %>% dplyr::select(yield,
 
 
 ```
+
+
+
+
+
+```{r}
+yields <- tidyquant::tq_get(symbols, get = "economic.data", from = "1992-01-01", to = Sys.Date()) %>%
+  tidyr::drop_na() %>% 
+  dplyr::mutate(maturity_in_years = dplyr::case_when(
+    symbol == "DGS1MO" ~ round(1/12, 3),
+    symbol == "DGS3MO" ~ round(3/12, 3),
+    symbol == "DGS6MO" ~ 6/12,
+    symbol == "DGS1"   ~ 1,
+    symbol == "DGS2"   ~ 2,
+    symbol == "DGS3"   ~ 3,
+    symbol == "DGS5"   ~ 5,
+    symbol == "DGS7"   ~ 7,
+    symbol == "DGS10"  ~ 10,
+    symbol == "DGS20"  ~ 20,
+    symbol == "DGS30"  ~ 30
+  ))  %>%
+  dplyr::rename(rate = price) %>%
+  dplyr::group_by(symbol) %>% 
+  dplyr::mutate(rate = rate / 100,
+                couponRate = 0,
+                frequency = dplyr::case_when(symbol == "DGS1MO" ~ 12, 
+                                      symbol == "DGS3MO" ~ 4,
+                                      TRUE ~ 2),
+                changeBasisPoints = round(((rate - lag(rate, 1)) * 10000), digits = 5),
+                par = 1000) %>% 
+  dplyr::arrange(desc(date)) %>% 
+  dplyr::mutate(yield_plus = rate + 0.0001,
+                yield_minus = rate - 0.0001) %>% 
+  dplyr::rowwise() %>% 
+  dplyr::mutate(
+    price = bondPrice(ytm = rate,
+                      faceValue = par,
+                      coupon = couponRate,
+                      ttm = maturity_in_years,
+                      freq = frequency),
+    pricePlus = bondPrice(ytm = yield_plus,
+                          faceValue = par,
+                          coupon = couponRate,
+                          ttm = maturity_in_years,
+                          freq = frequency),
+    priceMinus = bondPrice(ytm = yield_minus,
+                           faceValue = par,
+                           coupon = couponRate,
+                           ttm = maturity_in_years,
+                           freq = frequency)
+  ) %>% 
+  dplyr::ungroup()
+
+recentBond_everything <- yields %>%
+  filter(date == max(date))
+
+
+
+
+append <- dplyr::tibble(yield = round(seq(0.025, 0.075, step_size),4)) %>% 
+  tidyr::nest()
+
+
+recentBond <- yields %>%
+  filter(date == max(date)) %>% 
+  transmute(YTM = rate,
+            Maturity = maturity_in_years,
+            CouponRate = couponRate,
+            PortfolioAllocation = par,
+            Frequency = frequency,
+            Value = round(price, 2), 
+            price = price, 
+            pricePlus = pricePlus, 
+            priceMinus = priceMinus, 
+            yield_plus = yield_plus,
+            yield_minus = yield_minus) %>%
+  dplyr::mutate(duration_w_formula = Maturity/(1+(YTM/2)), 
+              
+              duration = (pricePlus - priceMinus)/ ((2*0.0001)*price),  
+              
+              gamma = (pricePlus - 2*price + priceMinus)/(price*2*0.0001)) %>% 
+  dplyr::mutate(sequence = append) %>% 
+  tidyr::unnest(sequence) %>% 
+  tidyr::unnest(data) %>% 
+  dplyr::group_by(YTM) %>% 
+  dplyr::mutate(price_new_yield = mapply(bondPrice, 
+                                         ytm = yield,
+                           faceValue = PortfolioAllocation,
+                           coupon = CouponRate,
+                           ttm = Maturity,
+                           freq = Frequency),
+                shock = yield - YTM, 
+                delta_pl = duration*shock*1000, 
+                gamma_pl = gamma * shock * 1000) %>%
+  dplyr::mutate(unexplained_pl = (price_new_yield-price)-delta_pl-gamma_pl) %>% 
+  dplyr::mutate(fake_weight = 1/11) %>% 
+  dplyr::mutate(total_pl = delta_pl + gamma_pl + unexplained_pl) %>% 
+  dplyr::mutate(pl_attribution_to_weight = fake_weight * total_pl) 
+  # tidyr::pivot_wider(names_from = YTM, values_from = pl_attribution_to_weight)
+  
+  
+recent_bond_cool <- recentBond %>% 
+  dplyr::select(YTM,
+                yield, 
+                shock,
+                total_pl, 
+                fake_weight,
+                pl_attribution_to_weight) %>% 
+  dplyr::arrange(yield) %>% 
+  dplyr::select(YTM, yield, shock, pl_attribution_to_weight) 
+
+
+
+recent_bond_cool %>%  plotly::plot_ly(x = ~shock, 
+                y = ~pl_attribution_to_weight, 
+                col = ~ YTM, 
+                name = ~YTM) %>% 
+  plotly::add_lines() %>% 
+  plotly::layout(title = list(text = "Where is PL coming from at each shock", x = 0), 
+                 xaxis = list(title = "Shock Amount %"), 
+                 yaxis = list(title = "Weighed Portfolio PL")
+  )
+
+
+
+
+
+
+
+
+
+
+
+
+recentBond_summary <- recentBond %>% 
+  dplyr::group_by(yield) %>% 
+  dplyr::summarise(pl = sum(pl_attribution_to_weight)) %>% 
+dplyr::distinct()
+
+
+recentBond_summary %>% 
+  plotly::plot_ly(x = ~yield, 
+                  y = ~pl) %>% 
+  plotly::add_lines() %>% 
+  plot
+  
+ 
+ 
+ 
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

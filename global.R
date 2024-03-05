@@ -67,6 +67,7 @@ recentBond <- yields %>%
             PortfolioAllocation = par,
             Frequency = frequency,
             Value = round(price, 2))
+recentBond %>% dplyr::mutate(rate_sequence = seq(0.025, 0.075))
 
 
 
