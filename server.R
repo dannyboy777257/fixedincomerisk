@@ -39,21 +39,33 @@ function(input, output, session) {
                     
       
   })
-  
 
   
   
+  yieldTSReac1 <- reactiveValues(data = yields)
   
+  filteredTS <- reactive({
+    data <- yieldTSReac1$data
+    selectedSymbols <- c(input$asset1, input$asset2, input$asset3, input$asset4)
+    
+    if(length(selectedSymbols) > 0) {
+      data <- data %>% 
+        filter(symbol %in% selectedSymbols)
+    }
+    
+    return(data)
+  })
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  output$YTMsample <- renderPlotly({
+    plotDf <- filteredTS()
+    if(nrow(plotDf) == 0) {
+      return(NULL) 
+    }
+    plot <- plotDf %>% 
+      plot_ly(x = ~date, y = ~rate, color = ~symbol, type = 'scatter', mode = 'lines+markers')
+    
+    return(plot)
+  })
   
   
   

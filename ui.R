@@ -31,14 +31,23 @@ shiny::fluidPage(
       shiny::tabPanel("Portfolio with Limits"),
       
       
-      
-      
-      
-      shiny::tabPanel("Something cool"),
-      
-      
-      
-      
+
+      shiny::tabPanel("Something cool",
+                       shiny::sidebarLayout(
+                         shiny::sidebarPanel(
+                           shiny::selectInput("asset1", "Choose Asset 1:", 
+                                              choices = c("Select" = "", unique(yields$symbol))),
+                           shiny::selectInput("asset2", "Choose Asset 2:", 
+                                              choices = c("Select" = "", unique(yields$symbol))),
+                           shiny::selectInput("asset3", "Choose Asset 3:", 
+                                              choices = c("Select" = "", unique(yields$symbol))),
+                           shiny::selectInput("asset4", "Choose Asset 4:", 
+                                              choices = c("Select" = "", unique(yields$symbol)))
+                         ),
+                         shiny::mainPanel(
+                           plotly::plotlyOutput("YTMsample")
+                         )
+                       )),
       
       shiny::tabPanel("Yield Curves",
                       sidebarLayout(

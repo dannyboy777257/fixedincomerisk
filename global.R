@@ -57,8 +57,6 @@ yields <- tidyquant::tq_get(symbols, get = "economic.data", from = "1992-01-01",
 recentBond_everything <- yields %>%
   filter(date == max(date))
 
-
-
 recentBond <- yields %>%
   filter(date == max(date)) %>% 
   transmute(YTM = rate,

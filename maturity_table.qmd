@@ -296,10 +296,6 @@ dynamic %>% dplyr::select(yield,
 
 ```
 
-
-
-
-
 ```{r}
 yields <- tidyquant::tq_get(symbols, get = "economic.data", from = "1992-01-01", to = Sys.Date()) %>%
   tidyr::drop_na() %>% 
@@ -446,26 +442,3 @@ recentBond_summary %>%
  
 
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
