@@ -2,6 +2,7 @@ library(bslib)
 library(plotly)
 library(shiny)
 library(DT)
+library(shinyWidgets)
 
 
 ch <- 400
@@ -42,8 +43,12 @@ shiny::fluidPage(
       shiny::tabPanel("Yield Curves",
                       sidebarLayout(
                         shiny::sidebarPanel(
-                          shiny::dateInput("dateInput", "Choose Date", 
-                                           value = Sys.Date(), min = "1992-01-01", max = Sys.Date()),
+                          sliderTextInput("dateSlider",
+                                          "Choose Date Range:",
+                                          choices = seq(as.Date("1992-01-01"), Sys.Date(), by = "day"),
+                                          selected = c(as.Date("1992-01-01"), Sys.Date()),
+                                          grid = TRUE,
+                                          animate = TRUE),
                           shiny::checkboxGroupInput("yieldSelection", "Select Yields to Plot", 
                                                     choices = c("DGS1MO", "DGS3MO", "DGS6MO", "DGS1", "DGS2", 
                                                                 "DGS3", "DGS5", "DGS7", "DGS10", "DGS20", "DGS30"),
