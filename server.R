@@ -108,7 +108,6 @@ function(input, output, session) {
     updateSliderTextInput(session, "dateSlider", selected = c(as.character(date_range[1]), as.character(date_range[2])))
   })
   
-  # Preparing data for the animated plot upon button click
   plotData <- eventReactive(input$generateButton, {
     startDate <- as.Date(input$dateSlider[1])
     endDate <- as.Date(input$dateSlider[2])
