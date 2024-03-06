@@ -198,42 +198,30 @@ function(input, output, session) {
   })
   
   
-  
-  
-  observe({
-    date_range <- input$dateSlider
-    updateDateRangeInput(session, "dateRangeInput", start = as.Date(date_range[1]), end = as.Date(date_range[2]))
-  })
-  
-  observe({
-    date_range <- input$dateRangeInput
-    updateSliderTextInput(session, "dateSlider", selected = c(as.character(date_range[1]), as.character(date_range[2])))
-  })
-  
   plotData <- eventReactive(input$generateButton, {
-    startDate <- as.Date(input$dateSlider[1])
-    endDate <- as.Date(input$dateSlider[2])
+    startDate <- as.Date(input$dateRangeInput[1])
+    endDate <- as.Date(input$dateRangeInput[2])
     symbolsSelected <- input$yieldSelection
     
     yields %>%
       filter(date >= startDate & date <= endDate, symbol %in% symbolsSelected) %>%
       arrange(date, maturity_in_years)
-  })
+  }, ignoreNULL = FALSE)  # ignoreNULL=FALSE makes it run once on app startup
   
   output$yieldCurvePlot <- renderPlotly({
+    # Accessing the eventReactive plotData directly
     df <- plotData()
     
-    p <- df %>%
-      plot_ly(x = ~maturity_in_years, y = ~rate,
-              frame = ~as.character(date), ids = ~paste(symbol, date),
-              type = 'scatter', mode = 'lines+markers',
-              line = list(shape = 'spline')) %>%
-      layout(title = 'Animated Yield Curves', 
-             xaxis = list(title = 'Maturity (Years)'), 
-             yaxis = list(title = 'Rate (%)')) %>%
-      animation_opts(frame = 25, redraw = TRUE) %>%
-      animation_slider(currentvalue = list(prefix = "Date: ")) %>%
-      layout(updatemenus = list(
+    plotly::plot_ly(df, x = ~maturity_in_years, y = ~rate,
+                    frame = ~as.character(date), ids = ~paste(symbol, date),
+                    type = 'scatter', mode = 'lines+markers',
+                    line = list(shape = 'spline')) %>%
+      plotly::layout(title = 'Yield Curves Through Time', 
+                     xaxis = list(title = 'Maturity (Years)'), 
+                     yaxis = list(title = 'Rate (%)')) %>%
+      plotly::animation_opts(frame = 50, redraw = TRUE) %>%
+      plotly::animation_slider(currentvalue = list(prefix = "Date: ")) %>%
+      plotly::layout(updatemenus = list(
         list(
           type = "buttons",
           showactive = FALSE,
@@ -243,13 +231,10 @@ function(input, output, session) {
           yanchor = "top",
           pad = list(t = 0, r = 10),
           buttons = list(
-            list(method = "animate", args = list("play", list(frame = "next", duration = 500)), label = "Play"),
-            list(method = "animate", args = list("pause"), label = "Pause")
+            list(method = "animate", args = list("play", list(frame = "next", duration = 500)), label = "Play")
           )
         )
       ))
-    
-    return(p)
   })
   
   # output$chart1 <- plotly::renderPlotly({
