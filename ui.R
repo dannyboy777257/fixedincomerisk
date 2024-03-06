@@ -36,17 +36,21 @@ shiny::fluidPage(
                        shiny::sidebarLayout(
                          shiny::sidebarPanel(
                            shiny::selectInput("asset1", "Choose Asset 1:", 
-                                              choices = c("Select" = "", unique(yields$symbol))),
-                           numericInput("allocation1", "Asset 1 Allocation:", value = 0),
+                                              choices = c("Select" = "", unique(yields$symbol)),
+                                              selected = unique(yields$symbol)[1]),
+                           numericInput("allocation1", "Asset 1 Allocation:", value = 100),
                            shiny::selectInput("asset2", "Choose Asset 2:", 
-                                              choices = c("Select" = "", unique(yields$symbol))),
-                           numericInput("allocation2", "Asset 2 Allocation:", value = 0),
+                                              choices = c("Select" = "", unique(yields$symbol)),
+                                              selected = unique(yields$symbol)[4]),
+                           numericInput("allocation2", "Asset 2 Allocation:", value = 100),
                            shiny::selectInput("asset3", "Choose Asset 3:", 
-                                              choices = c("Select" = "", unique(yields$symbol))),
-                           numericInput("allocation3", "Asset 3 Allocation:", value = 0),
+                                              choices = c("Select" = "", unique(yields$symbol)),
+                                              selected = unique(yields$symbol)[7]),
+                           numericInput("allocation3", "Asset 3 Allocation:", value = -100),
                            shiny::selectInput("asset4", "Choose Asset 4:", 
-                                              choices = c("Select" = "", unique(yields$symbol))),
-                           numericInput("allocation4", "Asset 4 Allocation:", value = 0)
+                                              choices = c("Select" = "", unique(yields$symbol)),
+                                              selected = unique(yields$symbol)[]),
+                           numericInput("allocation4", "Asset 4 Allocation:", value = -100)
                          ),
                          shiny::mainPanel(
                            plotly::plotlyOutput("YTMsample"),
