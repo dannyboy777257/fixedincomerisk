@@ -11,7 +11,7 @@ function(input, output, session) {
   
   # editable table render, outputting the maturity table by default. 
   output$recentBondTable <- renderDT({
-    datatable(recentBondReac$data,
+    DT::datatable(recentBondReac$data,
               editable = TRUE,
               options = list(pageLength = 11,
                              searching = FALSE,
@@ -39,6 +39,108 @@ function(input, output, session) {
                     
       
   })
+  
+  output$plChart <- plotly::renderPlotly({
+    shiny::req(recentBondReac$data)
+    # browser()
+    userData <- recentBondReac$data %>% 
+      dplyr::mutate(yield_plus = YTM + 0.0001,
+                    yield_minus = YTM - 0.0001) %>% 
+      dplyr::rowwise() %>% 
+      dplyr::mutate(
+        price = bondPrice(ytm = YTM,
+                          faceValue = PortfolioAllocation,
+                          coupon = CouponRate,
+                          ttm = Maturity,
+                          freq = Frequency),
+        pricePlus = bondPrice(ytm = yield_plus,
+                              faceValue = PortfolioAllocation,
+                              coupon = CouponRate,
+                              ttm = Maturity,
+                              freq = Frequency),
+        priceMinus = bondPrice(ytm = yield_minus,
+                               faceValue = PortfolioAllocation,
+                               coupon = CouponRate,
+                               ttm = Maturity,
+                               freq = Frequency)
+      ) %>% 
+      dplyr::ungroup()
+    # browser()
+    # change to user input so they can choose their boundaries
+    # MULTIPLY SHOCK BY 100 FOR CORRECT UNITS
+    # FIX WEIGHTS
+    append <- dplyr::tibble(yield = base::round(seq(0.025, 0.075, 0.0001),4)) %>% 
+      tidyr::nest()
+    
+    recentBondReac$plotData <- userData %>% 
+      dplyr::mutate(duration_w_formula = Maturity / (1+(YTM / 2)), 
+                    
+                    duration = (pricePlus - priceMinus) / ((2*0.0001)*price),  
+                    
+                    gamma = (pricePlus - 2 * price + priceMinus)/(price * 2 * 0.0001)) %>% 
+        dplyr::mutate(sequence = append) %>% 
+        tidyr::unnest(sequence) %>% 
+        tidyr::unnest(data) %>% 
+        dplyr::group_by(YTM) %>% 
+        dplyr::mutate(price_new_yield = mapply(bondPrice, 
+                                               ytm = yield,
+                                               faceValue = PortfolioAllocation,
+                                               coupon = CouponRate,
+                                               ttm = Maturity,
+                                               freq = Frequency),
+                      shock = yield - YTM, 
+                      delta_pl = duration * shock * price, 
+                      gamma_pl = gamma * shock * price,
+                      unexplained_pl = (price_new_yield - price) - delta_pl - gamma_pl,
+                      fake_weight = 1 / 11,
+                      total_pl = delta_pl + gamma_pl + unexplained_pl,
+                      pl_attribution_to_weight = fake_weight * total_pl) %>% 
+      dplyr::select(YTM,
+                    yield, 
+                    shock,
+                    total_pl, 
+                    fake_weight,
+                    pl_attribution_to_weight) %>% 
+      dplyr::arrange(yield) %>% 
+      dplyr::select(YTM, yield, shock, pl_attribution_to_weight)
+    
+    recentBondReac$plotData %>% 
+        plotly::plot_ly(
+          x = ~ shock,
+          y = ~ pl_attribution_to_weight,
+          colors = ~ YTM,
+          name = ~ YTM) %>%
+        plotly::add_lines() %>%
+        plotly::layout(
+          title = list(text = "Where is PL coming from at each shock", x = 0),
+          xaxis = list(title = "Shock Amount %"),
+          yaxis = list(title = "Weighed Portfolio PL"
+          )
+        )
+    
+    
+  })
+  
+  # output$plChart2 <- plotly::renderPlotly({
+  #   shiny::req(recentBondReac$plotData)
+  #  
+  #   recentBondReac$plotData %>% 
+  #     plotly::plot_ly(
+  #       x = ~ shock,
+  #       y = ~ pl_attribution_to_weight,
+  #       colors = ~ YTM,
+  #       name = ~ YTM) %>%
+  #     plotly::add_lines() %>%
+  #     plotly::layout(
+  #       title = list(text = "Where is PL coming from at each shock", x = 0),
+  #       xaxis = list(title = "Shock Amount %"),
+  #       yaxis = list(title = "Weighed Portfolio PL"
+  #       )
+  #     )
+  #   
+  #   
+  # })
+  
 
   
   

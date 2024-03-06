@@ -26,7 +26,7 @@ yields <- tidyquant::tq_get(symbols, get = "economic.data", from = "1992-01-01",
   dplyr::rename(rate = price) %>%
   dplyr::group_by(symbol) %>% 
   dplyr::mutate(rate = rate / 100,
-                couponRate = rate,
+                couponRate = 0,
                 frequency = dplyr::case_when(symbol == "DGS1MO" ~ 12, 
                                       symbol == "DGS3MO" ~ 4,
                                       TRUE ~ 2),
@@ -65,7 +65,7 @@ recentBond <- yields %>%
             CouponRate = couponRate,
             PortfolioAllocation = par,
             Frequency = frequency,
-            Value = round(price, 2))
+            Price = round(price, 2))
 recentBond %>% dplyr::mutate(rate_sequence = seq(0.025, 0.075))
 
 

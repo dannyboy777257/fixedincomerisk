@@ -14,12 +14,12 @@ shiny::fluidPage(
   shiny::mainPanel(
     shiny::tabsetPanel(
       shiny::tabPanel("Portfolio Analysis", 
-                      DT::dataTableOutput("recentBondTable")
+                      DT::dataTableOutput("recentBondTable"),
+                      shiny::br(),
+                      plotly::plotlyOutput("plChart", height = ch), 
                       # shiny::br(),
-                      # plotly::plotlyOutput("chart1", height = ch), 
-                      # shiny::br(), 
-                      # shiny::br(), 
-                      # plotly::plotlyOutput("chart2", height = ch), 
+                      # shiny::br(),
+                      # plotly::plotlyOutput("plChart2", height = ch),
                       # shiny::br(), 
                       # shiny::br(), 
                       # plotly::plotlyOutput("chart3", height = ch) 
