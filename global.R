@@ -7,7 +7,6 @@ Rcpp::sourceCpp('bondCalc.cpp')
 
 symbols <- c("DGS1MO", "DGS3MO", "DGS6MO", "DGS1", "DGS2", "DGS3", "DGS5", "DGS7", "DGS10", "DGS20", "DGS30")
 
-
 yields <- tidyquant::tq_get(symbols, get = "economic.data", from = "1992-01-01", to = Sys.Date()) %>%
   tidyr::drop_na() %>% 
   dplyr::mutate(maturity_in_years = dplyr::case_when(
@@ -56,18 +55,18 @@ yields <- tidyquant::tq_get(symbols, get = "economic.data", from = "1992-01-01",
   dplyr::ungroup()
 
 recentBond_everything <- yields %>%
-  filter(date == max(date))
+  dplyr::filter(date == max(date))
 
 recentBond <- yields %>%
-  filter(date == max(date)) %>% 
-  transmute(YTM = rate,
+  dplyr::filter(date == max(date)) %>% 
+  dplyr::filter(symbol %in% c("DGS6MO", "DGS2", "DGS5", "DGS20", "DGS30")) %>% 
+  dplyr::transmute(YTM = rate,
             Maturity = maturity_in_years,
             CouponRate = couponRate,
             PortfolioAllocation = par,
             Frequency = frequency,
             Price = round(price, 2))
-recentBond %>% dplyr::mutate(rate_sequence = seq(0.025, 0.075))
-
+  # above code is used to choose defaults preloaded in tab 1
 
 
 

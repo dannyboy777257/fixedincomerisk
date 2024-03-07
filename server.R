@@ -13,7 +13,7 @@ function(input, output, session) {
   output$recentBondTable <- renderDT({
     DT::datatable(recentBondReac$data,
               editable = TRUE,
-              options = list(pageLength = 11,
+              options = list(pageLength = 5,
                              searching = FALSE,
                              lengthChange = FALSE,
                              paging = FALSE), 
@@ -42,7 +42,9 @@ function(input, output, session) {
   
   output$plChart <- plotly::renderPlotly({
     shiny::req(recentBondReac$data)
-    # browser()
+
+    portfolioValue <- sum(abs(recentBondReac$data$PortfolioAllocation))
+    
     userData <- recentBondReac$data %>% 
       dplyr::mutate(yield_plus = YTM + 0.0001,
                     yield_minus = YTM - 0.0001) %>% 
@@ -62,8 +64,8 @@ function(input, output, session) {
                                faceValue = PortfolioAllocation,
                                coupon = CouponRate,
                                ttm = Maturity,
-                               freq = Frequency)
-      ) %>% 
+                               freq = Frequency),
+        totalPortfolio = portfolioValue) %>% 
       dplyr::ungroup()
     # browser()
     # change to user input so they can choose their boundaries
@@ -92,23 +94,36 @@ function(input, output, session) {
                       delta_pl = duration * shock * price, 
                       gamma_pl = gamma * shock * price,
                       unexplained_pl = (price_new_yield - price) - delta_pl - gamma_pl,
-                      fake_weight = 1 / 11,
+                      weight = price / totalPortfolio,
                       total_pl = delta_pl + gamma_pl + unexplained_pl,
-                      pl_attribution_to_weight = fake_weight * total_pl) %>% 
+                      pl_attribution_to_weight = weight * total_pl) %>% 
       dplyr::select(YTM,
                     yield, 
                     shock,
                     total_pl, 
-                    fake_weight,
+                    weight,
                     pl_attribution_to_weight) %>% 
       dplyr::arrange(yield) %>% 
-      dplyr::select(YTM, yield, shock, pl_attribution_to_weight)
+      dplyr::select(YTM, yield, shock, pl_attribution_to_weight) %>% 
+      dplyr::ungroup()
+
+    # recentBondReac$plotData <- recentBondReac$plotData %>% 
+    #   dplyr::group_by(shock) %>% 
+    #   dplyr::mutate(totalPl = sum(pl_attribution_to_weight)) %>% 
+    #   dplyr::ungroup()
+    
+   recentBondReac$MONEY <- recentBondReac$plotData %>% 
+      dplyr::group_by(shock) %>%  
+      dplyr::summarise(totalPl = sum(pl_attribution_to_weight)) %>% 
+      dplyr::ungroup()
+
     
     recentBondReac$plotData %>% 
         plotly::plot_ly(
           x = ~ shock,
           y = ~ pl_attribution_to_weight,
           colors = ~ YTM,
+          mode = 'lines',
           name = ~ YTM) %>%
         plotly::add_lines() %>%
         plotly::layout(
@@ -121,25 +136,24 @@ function(input, output, session) {
     
   })
   
-  # output$plChart2 <- plotly::renderPlotly({
-  #   shiny::req(recentBondReac$plotData)
-  #  
-  #   recentBondReac$plotData %>% 
-  #     plotly::plot_ly(
-  #       x = ~ shock,
-  #       y = ~ pl_attribution_to_weight,
-  #       colors = ~ YTM,
-  #       name = ~ YTM) %>%
-  #     plotly::add_lines() %>%
-  #     plotly::layout(
-  #       title = list(text = "Where is PL coming from at each shock", x = 0),
-  #       xaxis = list(title = "Shock Amount %"),
-  #       yaxis = list(title = "Weighed Portfolio PL"
-  #       )
-  #     )
-  #   
-  #   
-  # })
+  output$plChart2 <- plotly::renderPlotly({
+    shiny::req(recentBondReac$MONEY)
+
+    recentBondReac$MONEY %>%
+      plotly::plot_ly(
+        x = ~ shock,
+        y = ~ totalPl,
+        colors = ~ shock) %>%
+      plotly::add_lines() %>%
+      plotly::layout(
+        title = list(text = "Total Portfolio Profit and Loss", x = 0),
+        xaxis = list(title = "Shock Amount %"),
+        yaxis = list(title = "Total Portfolio PL"
+        )
+      )
+
+
+  })
   
 
   
@@ -147,22 +161,23 @@ function(input, output, session) {
   yieldTSReac1 <- reactiveValues(data = yields)
   
   filteredTS <- reactive({
+
     data <- yieldTSReac1$data
     selectedSymbols <- c(input$asset1, input$asset2, input$asset3, input$asset4)
     allocationValues <- c(input$allocation1, input$allocation2, input$allocation3, input$allocation4)
-    allocations <- setNames(allocationValues, selectedSymbols)
+
+    inputTable <- tibble::tibble(selectedSymbols, allocationValues) %>% 
+      dplyr::group_by(selectedSymbols) %>% 
+      dplyr::summarise(allocationsTotal = sum(allocationValues)) %>% 
+      dplyr::ungroup()
     
-    if(length(selectedSymbols) > 0) {
-      data <- data %>% 
-        filter(symbol %in% selectedSymbols) %>%
-      mutate(par = case_when(
-        symbol == names(allocations)[1] ~ as.numeric(allocations[1]),
-        symbol == names(allocations)[2] ~ as.numeric(allocations[2]),
-        symbol == names(allocations)[3] ~ as.numeric(allocations[3]),
-        symbol == names(allocations)[4] ~ as.numeric(allocations[4]),
-        TRUE ~ par
-      ))
-    }
+    #allocations <- setNames(allocationValues, selectedSymbols)
+    
+    data <- data %>% 
+      filter(symbol %in% inputTable$selectedSymbols) %>%
+      dplyr::left_join(inputTable, by = c("symbol" = "selectedSymbols")) %>% 
+      mutate(par = allocationsTotal) %>% 
+      dplyr::select(-allocationsTotal)
     
     data <- data %>%
       dplyr::rowwise() %>% 
@@ -170,31 +185,69 @@ function(input, output, session) {
                                             faceValue = par,
                                             coupon = couponRate,
                                             ttm = maturity_in_years,
-                                            freq = frequency), 2))
+                                            freq = frequency), 2),
+                    pricePlus = bondPrice(ytm = yield_plus,
+                                          faceValue = par,
+                                          coupon = couponRate,
+                                          ttm = maturity_in_years,
+                                          freq = frequency),
+                    priceMinus = bondPrice(ytm = yield_minus,
+                                           faceValue = par,
+                                           coupon = couponRate,
+                                           ttm = maturity_in_years,
+                                           freq = frequency)) %>% 
+      dplyr::ungroup() %>% 
+      dplyr::mutate(
+        
+        duration = (pricePlus - priceMinus)/ ((2*0.0001)*price),
+        
+        # the 0.0001 can be changed to see price change from that change in rate.
+        # allow user to change basis point change IDEA
+        delta = 0.0001*price*duration )
     
     return(data)
   })
   
-  output$YTMsample <- renderPlotly({
-    plotDf <- filteredTS()
-    if(nrow(plotDf) == 0) {
-      return(NULL) 
-    }
-    plot <- plotDf %>% 
-      plot_ly(x = ~date, y = ~rate, color = ~symbol, type = 'scatter', mode = 'lines+markers')
-    
-    return(plot)
+  # dollar value of basis point graph
+  output$DVBP <- renderPlotly({
+  #  browser()
+    filteredTS() %>% 
+      plotly::plot_ly(x = ~ date, 
+                      y = ~delta, 
+                      name = ~symbol, 
+                      color = ~symbol) %>% 
+      plotly::add_lines() %>% 
+      plotly::layout(title = list(text = "Bond Price Change per 1 Basis Point Increase in Yield: 1995 - Present", x = 0), 
+                     xaxis = list(title = "Date"), 
+                     yaxis = list(title = "$ value of 1 basis point:")
+      )
   })
   
-  output$allocation <- renderPlotly({
-    plotDf <- filteredTS()
-    if(nrow(plotDf) == 0) {
-      return(NULL) 
-    }
-    plot <- plotDf %>% 
-      plot_ly(x = ~date, y = ~par, color = ~symbol, type = 'scatter', mode = 'lines+markers')
+  output$standardDev <- renderPlotly({
     
-    return(plot)
+    sd_date_start <-  "2019-01-01"
+
+    # used Increase because risk should worry about downside/ possible loss
+    filteredTS() %>%
+      dplyr::filter(date > sd_date_start) %>% 
+      dplyr::group_by(symbol) %>% 
+      dplyr::mutate(sd_of_delta = slider::slide_dbl(
+        .x = delta, 
+        .f = sd, 
+        .before = 30, 
+        .after = 0, 
+        .complete = FALSE
+      ) * sqrt(252/30)) %>%   
+      plotly::plot_ly(x = ~ date, 
+                      y = ~sd_of_delta, 
+                      name = ~symbol, 
+                      color = ~symbol) %>% 
+      plotly::add_lines() %>% 
+      plotly::layout(title = list(text = "30 Day Rolling Standard Deviation of Dollar Value Change from 1 Basis Point Increase (Annualized)", x = 0), 
+                     xaxis = list(title = "Date"), 
+                     yaxis = list(title = "Standard Deviation (%)")
+      )
+
   })
   
 # Yield Curve Tab
