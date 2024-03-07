@@ -13,6 +13,12 @@ shiny::fluidPage(
   shiny::br(),
   shiny::mainPanel(
     shiny::tabsetPanel(
+      shiny::tabPanel("User Guide",
+                      shiny::selectInput("guideSelection", "Select a Tab to Learn More:", 
+                                         choices = c("Portfolio Analysis", "Something Cool", "Yield Curves")),
+                      shiny::uiOutput("dynamicGuide")
+                      ),
+      
       shiny::tabPanel("Portfolio Analysis", 
                       DT::dataTableOutput("recentBondTable"),
                       shiny::br(),
@@ -29,6 +35,7 @@ shiny::fluidPage(
       
       
       shiny::tabPanel("Portfolio with Limits"),
+      
       
       
 
@@ -62,7 +69,8 @@ shiny::fluidPage(
                       sidebarLayout(
                         shiny::sidebarPanel(
                           shiny::dateRangeInput("dateRangeInput", "Choose Date Range:",
-                                                start = Sys.Date() - 365, end = Sys.Date(),
+                                                start = Sys.Date() - 365, end = Sys.Date() - 1,
+                                                # end is Sys.Date - 1 to account for recent data not being pulled from tidyquant
                                                 min = "1992-01-01", max = Sys.Date()),
                           shiny::checkboxGroupInput("yieldSelection", "Select Yields to Plot", 
                                                     choices = c("DGS1MO", "DGS3MO", "DGS6MO", "DGS1", "DGS2", 

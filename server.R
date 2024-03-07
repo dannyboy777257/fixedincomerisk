@@ -197,11 +197,25 @@ function(input, output, session) {
     return(plot)
   })
   
-  
+# Yield Curve Tab
   plotData <- eventReactive(input$generateButton, {
     startDate <- as.Date(input$dateRangeInput[1])
     endDate <- as.Date(input$dateRangeInput[2])
     symbolsSelected <- input$yieldSelection
+    
+    if (endDate < startDate) {
+      # Notify the user about the invalid date range
+      shiny::showNotification("End date cannot be before start date.", type = "error")
+      
+      # Return NULL to prevent further execution
+      return(NULL)
+    } else if (endDate == startDate) {
+      # Notify the user that the start and end dates cannot be the same
+      shiny::showNotification("Start and end dates cannot be the same.", type = "error")
+      
+      # Return NULL to prevent further execution
+      return(NULL)
+    }
     
     yields %>%
       filter(date >= startDate & date <= endDate, symbol %in% symbolsSelected) %>%
@@ -211,6 +225,8 @@ function(input, output, session) {
   output$yieldCurvePlot <- renderPlotly({
     # Accessing the eventReactive plotData directly
     df <- plotData()
+    
+    if (is.null(df)) return(NULL)
     
     plotly::plot_ly(df, x = ~maturity_in_years, y = ~rate,
                     frame = ~as.character(date), ids = ~paste(symbol, date),
@@ -236,6 +252,50 @@ function(input, output, session) {
         )
       ))
   })
+  
+# User Guide 
+  output$dynamicGuide <- renderUI({
+    req(input$guideSelection)
+    if(input$guideSelection == "Portfolio Analysis") {
+      return(
+        div(
+          h4(strong("About the Tab")),
+          p("This tab enables users to analyze their bond portfolio, focusing on key metrics and performance indicators in the face of interest rate changes."),
+          h4(strong("How to Use This Tab")),
+          p("1. View the Recent Bond Table for an overview of your current positions."),
+          p("2. Analyze the Profit/Loss Chart to assess potential impacts of interest rate changes on your portfolio's value."),
+        )
+      )
+    } else if(input$guideSelection == "Something Cool") {
+      return(
+        div(
+          h4(strong("About the Tab")),
+          p("Clarify the innovative aspects this tab offers, focusing on advanced analysis for deeper insights."),
+          h4(strong("How to Use This Tab")),
+          p("1. Select assets and set allocations to analyze diversification and risk."),
+          p("2. Utilize the YTM and Allocation Visualizations for informed decision-making.")
+        )
+      )
+    } else if(input$guideSelection == "Yield Curves") {
+      return(
+        div(
+          h4(strong("About the Tab")),
+          p("This tab aids in visualizing the yield curve across different maturities and time, helping predict interest rate movements."),
+          h4(strong("How to Use This Tab")),
+          p("1. Use the Date Range and Yield Selection to customize your analysis."),
+          p("**Using a large date range will result in very slow loading times, as each day's yield curve must be saved as a frame to load the animation.**"),
+          p("2. Once settings are chosen to user's discretion, click the generate button to load the start date's yield curve"),
+          p("3. Click the play button to begin the animation and analyze the movement of the yield curve through the chosen date ranges."),
+          p("4. To stop at a specific point in time, use the slider under the graph to examine the yield curve at a user specified time.")
+        )
+      )
+    }
+  })
+      
+  
+  
+  
+  
   
   # output$chart1 <- plotly::renderPlotly({
   #   shiny::req()
