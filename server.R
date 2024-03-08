@@ -15,7 +15,7 @@ function(input, output, session) {
   # editable table render, outputting the maturity table by default. 
   output$recentBondTable <- DT::renderDT({
     DT::datatable(recentBondReac$data,
-              editable = list(target = "cell", disable = list(columns = c(1,6))),
+              editable = list(target = "cell", disable = list(columns = c(1,7))),
               options = list(pageLength = 5,
                              searching = FALSE,
                              lengthChange = FALSE,
