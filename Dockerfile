@@ -6,8 +6,8 @@ RUN apt-get update && apt-get install -y git \
     libproj-dev \
     libmysqlclient-dev
 
-RUN git clone https://github.com/dannyboy777257/abandonedwellliabilities.git /srv/shiny-server/wells
-RUN Rscript /srv/shiny-server/wells/requirements.R
+RUN git clone https://github.com/dannyboy777257/fixedincomerisk.git /srv/shiny-server/fixedincomerisk
+RUN Rscript /srv/shiny-server/fixedincomerisk/requirements.R
 
 EXPOSE 3838
 
