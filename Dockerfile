@@ -4,7 +4,10 @@ RUN apt-get update && apt-get install -y git \
     libgdal-dev \
     libgeos-dev \
     libproj-dev \
-    libmysqlclient-dev
+    libudunits2-dev \
+    libgdal-dev \
+    libgeos-dev \
+    libproj-dev 
 
 RUN git clone https://github.com/dannyboy777257/fixedincomerisk.git /srv/shiny-server/fixedincomerisk
 RUN Rscript /srv/shiny-server/fixedincomerisk/requirements.R
