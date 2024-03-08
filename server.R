@@ -271,8 +271,8 @@ function(input, output, session) {
     }
     
     yields %>%
-      filter(date >= startDate & date <= endDate, symbol %in% symbolsSelected) %>%
-      arrange(date, maturity_in_years)
+      dplyr::filter(date >= startDate & date <= endDate, symbol %in% symbolsSelected) %>%
+      dplyr::arrange(date, maturity_in_years)
   }, ignoreNULL = FALSE)  # ignoreNULL=FALSE makes it run once on app startup
   
   output$yieldCurvePlot <- renderPlotly({
