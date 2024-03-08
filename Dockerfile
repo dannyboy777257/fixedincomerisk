@@ -14,4 +14,4 @@ RUN Rscript /srv/shiny-server/fixedincomerisk/requirements.R
 
 EXPOSE 3838
 
-CMD ["R", "-e", "shiny::runApp('/srv/shiny-server/wells', host = '0.0.0.0', port = 3838)"]
+CMD ["R", "-e", "shiny::runApp('/srv/shiny-server/fixedincomerisk', host = '0.0.0.0', port = 3838)"]
