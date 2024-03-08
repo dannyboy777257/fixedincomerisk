@@ -1,8 +1,8 @@
 library(bslib)
-library(plotly)
 library(shiny)
 library(DT)
-library(shinyWidgets)
+library(tidyverse)
+library(tidyquant)
 
 
 ch <- 400

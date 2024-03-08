@@ -210,7 +210,7 @@ function(input, output, session) {
   
   # dollar value of basis point graph
   output$DVBP <- renderPlotly({
-  #  browser()
+    # browser()
     filteredTS() %>% 
       plotly::plot_ly(x = ~ date, 
                       y = ~delta, 
@@ -397,3 +397,4 @@ function(input, output, session) {
   # })
   
 }
+
