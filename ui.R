@@ -15,7 +15,7 @@ shiny::fluidPage(
     shiny::tabsetPanel(
       shiny::tabPanel("User Guide",
                       shiny::selectInput("guideSelection", "Select a Tab to Learn More:", 
-                                         choices = c("Portfolio Analysis", "Something Cool", "Yield Curves")),
+                                         choices = c("Portfolio Analysis", "Historical Analysis", "Yield Curves")),
                       shiny::uiOutput("dynamicGuide")
                       ),
       
