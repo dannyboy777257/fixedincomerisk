@@ -78,7 +78,9 @@ shiny::fluidPage(
                                                                  "DGS3", "DGS5", "DGS7", "DGS10", "DGS20", "DGS30")),
                           shiny::actionButton("generateButton", "Generate Plot")
                         ),
-                        shiny::mainPanel(plotly::plotlyOutput("yieldCurvePlot"), height = ch)
+                        shiny::mainPanel(
+                          shiny::br(),
+                          plotly::plotlyOutput("yieldCurvePlot"), height = ch)
                       ))
     )
   )

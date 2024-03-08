@@ -9,7 +9,7 @@ library(stats)
 library(tidyr)
 
 function(input, output, session) {
-  
+  # reactive data set from global to initialize
   recentBondReac <- shiny::reactiveValues(data = recentBond)
   
   # editable table render, outputting the maturity table by default. 
@@ -37,12 +37,12 @@ function(input, output, session) {
     dplyr::ungroup()
                     
   })
-  
+  # render the pl chart with various assets in the portfolio
   output$plChart <- plotly::renderPlotly({
     shiny::req(recentBondReac$data)
-
+    # get full portfolio value to find weights of assets
     portfolioValue <- sum(abs(recentBondReac$data$PortfolioAllocation))
-
+    # recalcualte prices
     userData <- recentBondReac$data %>% 
       dplyr::mutate(yield_plus = YTM + 0.0001,
                     yield_minus = YTM - 0.0001) %>% 
@@ -65,10 +65,11 @@ function(input, output, session) {
                                freq = Frequency),
         totalPortfolio = portfolioValue) %>% 
       dplyr::ungroup()
-
+    # sequence of yields between 0.025 and 0.075 to shock and reprice 
     append <- dplyr::tibble(yield = base::round(seq(0.025, 0.075, 0.0001),4)) %>% 
       tidyr::nest()
 
+    # calculating various Greeks on portfolio with shocks
     recentBondReac$plotData <- userData %>% 
       dplyr::mutate(duration_w_formula = Maturity / (1+(YTM / 2)), 
                     
@@ -94,7 +95,7 @@ function(input, output, session) {
                       pl_attribution_to_weight = weight * total_pl) %>% 
       dplyr::ungroup()
     
-    
+    # assigning data to other reactive plot data so plots will update
     recentBondReac$plotData3 <- recentBondReac$plotData %>% 
       dplyr::select(shock,
                     yield,
@@ -119,7 +120,7 @@ function(input, output, session) {
       dplyr::summarise(totalPl = sum(pl_attribution_to_weight)) %>% 
       dplyr::ungroup()
 
-    
+    # render plotly for asset PL chart
     recentBondReac$plotData1 %>% 
         plotly::plot_ly(
           x = ~ shock,
@@ -137,7 +138,7 @@ function(input, output, session) {
     
     
   })
-  
+  # chart for total portfolio pl
   output$plChart2 <- plotly::renderPlotly({
     shiny::req(recentBondReac$MONEY)
 
@@ -154,7 +155,7 @@ function(input, output, session) {
         )
       )
   })
-  
+  # chart for pl attributed to greeks
   output$plChart3 <- plotly::renderPlotly({
     shiny::req(recentBondReac$plotData3)
 
@@ -182,10 +183,11 @@ function(input, output, session) {
   })
   
 
-  
+  # used for 2nd tab
   
   yieldTSReac1 <- shiny::reactiveValues(data = yields)
   
+  # reactive data for all charts on 2nd tab taking in inputs and manipulating accordingly 
   filteredTS <- shiny::reactive({
 
     data <- yieldTSReac1$data
@@ -243,7 +245,7 @@ function(input, output, session) {
                      yaxis = list(title = "$ Value of 1 Basis Point:")
       )
   })
-  
+  # SD plot of DVBP 
   output$standardDev <- plotly::renderPlotly({
     
     sd_date_start <-  "2019-01-01"
@@ -272,7 +274,7 @@ function(input, output, session) {
 
   })
   
-  
+  # correlation matrix plot/function
   output$corMatrix <- shiny::renderPlot({
     
     corrData <- filteredTS() %>% 
