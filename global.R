@@ -29,9 +29,9 @@ yields <- tidyquant::tq_get(symbols, get = "economic.data", from = "1992-01-01",
                 frequency = dplyr::case_when(symbol == "DGS1MO" ~ 12, 
                                       symbol == "DGS3MO" ~ 4,
                                       TRUE ~ 2),
-                changeBasisPoints = round(((rate - lag(rate, 1)) * 10000), digits = 5),
+                changeBasisPoints = round(((rate - dplyr::lag(rate, 1)) * 10000), digits = 5),
                 par = 1000) %>% 
-  dplyr::arrange(desc(date)) %>% 
+  dplyr::arrange(dplyr::desc(date)) %>% 
   dplyr::mutate(yield_plus = rate + 0.0001,
                 yield_minus = rate - 0.0001) %>% 
   dplyr::rowwise() %>% 
@@ -59,55 +59,19 @@ recentBond_everything <- yields %>%
 
 recentBond <- yields %>%
   dplyr::filter(date == max(date)) %>% 
-  dplyr::filter(symbol %in% c("DGS6MO", "DGS2", "DGS5", "DGS20", "DGS30")) %>% 
-  dplyr::transmute(YTM = rate,
+  dplyr::filter(symbol %in% c("DGS6MO", "DGS2", "DGS5", "DGS20", "DGS30")) %>%
+  dplyr::mutate(Asset = dplyr::case_when(
+    symbol == "DGS6MO" ~ "Asset 1",
+    symbol == "DGS2" ~ "Asset 2",
+    symbol == "DGS5" ~ "Asset 3",
+    symbol == "DGS20" ~ "Asset 4",
+    symbol == "DGS30" ~ "Asset 5")) %>% 
+  dplyr::transmute(
+            Asset = Asset,
+            YTM = rate,
             Maturity = maturity_in_years,
             CouponRate = couponRate,
             PortfolioAllocation = par,
             Frequency = frequency,
             Price = round(price, 2))
   # above code is used to choose defaults preloaded in tab 1
-
-
-
-
-
-
-# bonds$price <- base::apply(bonds, 1, function(row) {
-#   
-#   bondPrice(ytm = rate, faceValue = par, coupon = couponRate, ttm = row['maturity_in_years'], freq = frequency)
-#   
-# })
-
-
-
-# 
-#                 ,
-#                 
-#                 
-#                 
-#                 price_plus = mapply(RTL::bond,
-#                                     ytm = yield_plus,
-#                                     C = 0,
-#                                     T2M = maturity_in_years,
-#                                     m = 1,
-#                                     output = "price"),
-#                 
-#                 
-#                 price_minus = mapply(RTL::bond,
-#                                      ytm = yield_minus,
-#                                      C = 0,
-#                                      T2M = maturity_in_years,
-#                                      m = 1,
-#                                      output = "price"),
-#                 
-#                 
-#                 price = mapply(RTL::bond,
-#                                ytm = rate,
-#                                C = 0,
-#                                T2M = maturity_in_years,
-#                                m = 1,
-#                                output = "price"))
-
-# put our initial data pulls and manipulation in here
-

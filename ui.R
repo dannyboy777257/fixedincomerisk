@@ -1,17 +1,17 @@
 library(bslib)
 library(shiny)
 library(DT)
-library(tidyverse)
-library(tidyquant)
+
 
 
 ch <- 400
-
+shiny::shinyUI(
 shiny::fluidPage(
-  theme = bslib::bs_theme(bootswatch = "cosmo"),
+  theme = bslib::bs_theme(bootswatch = "darkly"),
   shiny::titlePanel("Interest Rate Risk on Fixed Income"),
   shiny::br(),
   shiny::mainPanel(
+    width = 10,
     shiny::tabsetPanel(
       shiny::tabPanel("User Guide",
                       shiny::selectInput("guideSelection", "Select a Tab to Learn More:", 
@@ -23,42 +23,43 @@ shiny::fluidPage(
                       DT::dataTableOutput("recentBondTable"),
                       shiny::br(),
                       shiny::br(),
-                      plotly::plotlyOutput("plChart", height = ch), 
+                      shiny::fluidRow(
+                        shiny::column(width = 6, plotly::plotlyOutput("plChart", height = ch)),
+                        shiny::column(width = 6, plotly::plotlyOutput("plChart3", height = ch))
+                      ),
                       shiny::br(),
-                      shiny::br(),
-                      plotly::plotlyOutput("plChart2", height = ch)
-                     # )
-                      # shiny::br(), 
-                      # shiny::br(), 
-                      # plotly::plotlyOutput("chart3", height = ch) 
+                      plotly::plotlyOutput("plChart2", width = "100%", height = ch)
       ),
 
       shiny::tabPanel("Historical Analysis",
                        shiny::sidebarLayout(
                          fluid = TRUE,
                          shiny::sidebarPanel(
+                           style = "position:fixed;width:22%;",
                            shiny::selectInput("asset1", "Choose Asset 1:", 
-                                              choices = c("Select" = "", unique(yields$symbol)),
-                                              selected = unique(yields$symbol)[3]),
+                                              choices = c("Select" = "", base::unique(yields$symbol)),
+                                              selected = base::unique(yields$symbol)[3]),
                            shiny::numericInput("allocation1", "Asset 1 Allocation:", value = 100),
                            shiny::selectInput("asset2", "Choose Asset 2:", 
-                                              choices = c("Select" = "", unique(yields$symbol)),
-                                              selected = unique(yields$symbol)[4]),
+                                              choices = c("Select" = "", base::unique(yields$symbol)),
+                                              selected = base::unique(yields$symbol)[4]),
                            shiny::numericInput("allocation2", "Asset 2 Allocation:", value = 100),
                            shiny::selectInput("asset3", "Choose Asset 3:", 
-                                              choices = c("Select" = "", unique(yields$symbol)),
-                                              selected = unique(yields$symbol)[7]),
+                                              choices = c("Select" = "", base::unique(yields$symbol)),
+                                              selected = base::unique(yields$symbol)[7]),
                            shiny::numericInput("allocation3", "Asset 3 Allocation:", value = -100),
                            shiny::selectInput("asset4", "Choose Asset 4:", 
-                                              choices = c("Select" = "", unique(yields$symbol)),
-                                              selected = unique(yields$symbol)[]),
+                                              choices = c("Select" = "", base::unique(yields$symbol)),
+                                              selected = base::unique(yields$symbol)[]),
                            shiny::numericInput("allocation4", "Asset 4 Allocation:", value = -100)
                          ),
                          shiny::mainPanel(
-                           plotly::plotlyOutput("DVBP"),
+                           plotly::plotlyOutput("DVBP", height = ch),
                            shiny::br(),
+                           plotly::plotlyOutput("standardDev", height = ch),
                            shiny::br(),
-                           plotly::plotlyOutput("standardDev")
+                           shiny::h2("Pearson Correlation Analysis"),
+                           shiny::plotOutput("corMatrix")
                          )
                        )),
       
@@ -77,8 +78,9 @@ shiny::fluidPage(
                                                                  "DGS3", "DGS5", "DGS7", "DGS10", "DGS20", "DGS30")),
                           shiny::actionButton("generateButton", "Generate Plot")
                         ),
-                        shiny::mainPanel(plotly::plotlyOutput("yieldCurvePlot"))
+                        shiny::mainPanel(plotly::plotlyOutput("yieldCurvePlot"), height = ch)
                       ))
     )
   )
+)
 )
