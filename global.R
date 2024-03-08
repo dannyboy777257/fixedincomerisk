@@ -2,6 +2,10 @@ library(tidyverse)
 library(tidyquant)
 library(Rcpp)
 
+
+# Group: Jonathan Vlahadamis, Jamie Kim, Daniel Vovk, Luke Talman
+# Project on Fixed income Risk
+
 # source the file name
 Rcpp::sourceCpp('bondCalc.cpp')
 
