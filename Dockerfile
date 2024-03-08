@@ -1,13 +1,8 @@
 FROM rocker/shiny-verse:latest 
 RUN apt-get update && apt-get install -y git \
-    libudunits2-dev \
-    libgdal-dev \
-    libgeos-dev \
-    libproj-dev \
-    libudunits2-dev \
-    libgdal-dev \
-    libgeos-dev \
-    libproj-dev 
+    libssl-dev \
+    libcurl4-gnutls-dev \
+    libxml2-dev
 
 RUN git clone https://github.com/dannyboy777257/fixedincomerisk.git /srv/shiny-server/fixedincomerisk
 RUN Rscript /srv/shiny-server/fixedincomerisk/requirements.R
