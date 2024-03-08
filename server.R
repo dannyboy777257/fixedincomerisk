@@ -353,8 +353,8 @@ function(input, output, session) {
       ))
   })
   
-# User Guide 
-  output$dynamicGuide <- shiny::renderUI({
+  # User Guide 
+  output$dynamicGuide <- renderUI({
     shiny::req(input$guideSelection)
     if(input$guideSelection == "Portfolio Analysis") {
       return(
@@ -370,7 +370,7 @@ function(input, output, session) {
           shiny::p("1. Begin with the 'Recent Bond Table' to view your current bond positions. This editable table allows for real-time data manipulation, showing key details of your portfolio."),
           shiny::p("2. Directly edit any cell in the 'Recent Bond Table' to model different scenarios. Adjust elements like yield-to-maturity (YTM), coupon rates, or allocations to see how these changes may affect your portfolio’s metrics."),
           shiny::p("3. Check the 'Profit/Loss (P/L) Chart' located below the table for a graphical representation of how potential interest rate changes could impact your portfolio’s value. This aids in visualizing risk and return."),
-          shiny::p("4. Use the 'Total Portfolio Profit and Loss' chart to gauge the overall effect of yield curve shifts on your portfolio. This accumulates the impact of individual bond adjustments and market variations, illustrating portfolio resilience or vulnerability to interest rate swings."),
+          shiny::p("4. Analyze the PL Attributions from Delta and Gamma to understand how the portfolio is affected."),
           shiny::p("Following these steps helps in effectively managing the risk and return profile of your bond portfolio, leveraging real-time data and analytics for strategic portfolio optimization."),
           shiny::h4(strong("Disclaimers")),
           shiny::p("YTM and Coupon rate should be in inputted in decimal form. (ie: a YTM and coupon rate of 5% should be 0.05"),
@@ -382,7 +382,7 @@ function(input, output, session) {
         shiny::div(
           shiny::h4(strong("About the 'Historical Analysis' Tab")),
           shiny::p("The 'Historical Analysis' tab provides a streamlined approach for examining the historical performance and volatility of bond assets. 
-            It features visual tools to analyze bond price sensitivity to yield changes and the rolling standard deviation of these changes, offering 
+            It features visual tools to analyze bond price sensitivity to yield changes, the rolling standard deviation of these changes, and correlations of the assets, offering 
             insights into risk and return patterns. Users can customize their analysis by selecting specific assets and setting allocations, making it 
             an essential resource for informed investment strategy and risk management."),
           shiny::h4(strong("How to Use the 'Historical Analysis' Tab")),
@@ -391,6 +391,7 @@ function(input, output, session) {
           shiny::p("2. For each selected asset, specify its allocation in your portfolio using the 'Asset Allocation' fields. These allocations reflect the weight of each asset in the analysis, influencing the overall interpretation of historical data."),
           shiny::p("3. Review the 'Bond Price Change per 1 Basis Point Increase in Yield' chart, which visualizes how minor yield fluctuations historically impacted the dollar value of your selected bonds."),
           shiny::p("4. Examine the '30 Day Rolling Standard Deviation of Dollar Value Change from 1 Basis Point Increase (Annualized)' chart."),
+          shiny::p("5. Examine the Correlation Matrix of each asset to understand the relationship between different assets at different maturities."),
           shiny::p("By following these steps, users can effectively utilize the 'Historical Analysis' tab to gain a comprehensive understanding of past bond performance and risk, aiding in the cultivation of a resilient investment portfolio.")
         )
       )
@@ -402,7 +403,7 @@ function(input, output, session) {
             crucial for anticipating interest rate trends and economic health. By animating yield curve changes over time, users can identify patterns 
             and strategize effectively. This functionality is not just about observing historical trends but actively using them to predict 
             future market movements, making it a valuable asset for navigating the fixed income market with confidence."),
-          shiny::h4(strong("How to Use This Tab")),
+          shiny::h4(strong("How to Use The 'Yield Curves' Tab")),
           shiny::p("1. Use the Date Range and Yield Selection to customize your analysis."),
           shiny::p("2. Once settings are chosen to user's discretion, click the generate button to load the start date's yield curve"),
           shiny::p("3. Click the play button to begin the animation and analyze the movement of the yield curve through the chosen date ranges."),
