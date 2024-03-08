@@ -1,8 +1,7 @@
 FROM rocker/shiny-verse:latest 
 RUN apt-get update && apt-get install -y git \
     libssl-dev \
-    libcurl4-gnutls-dev \
-    libxml2-dev
+    libcurl4-gnutls-dev 
 
 RUN git clone https://github.com/dannyboy777257/fixedincomerisk.git /srv/shiny-server/fixedincomerisk
 RUN Rscript /srv/shiny-server/fixedincomerisk/requirements.R
