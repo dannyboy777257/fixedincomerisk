@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y git \
 
 
 # Install/clone the files from the from GitHub repository
-RUN git clone https://github.com/dannyboy777257/fixedincomerisk
+RUN git clone https://github.com/dannyboy777257/fixedincomerisk.git /srv/shiny-server/fixedincomerisk
 
 # Install R packages contained in the requirements file
 RUN Rscript /srv/shiny-server/fixedincomerisk/requirements.R
